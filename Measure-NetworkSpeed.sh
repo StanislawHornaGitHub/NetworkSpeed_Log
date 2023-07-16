@@ -46,7 +46,7 @@ Main() {
     # Check which WAN gateway is in use
     GetISP
     # Perform speedtest
-
+    echo "ISP provider: $ISPProvider"
     exit 0
 
     GetSpeedTest
@@ -111,15 +111,16 @@ GetISP() {
     GatewayNumber=$(cat $Filename | grep -e "EXTERNAL_GATEWAY_NUMBER:")
     GatewayNumber=${GatewayNumber#*: }
 
-    echo "$Tracert" | while read -r Tracertline; do
+    GatewayIP=$(echo "$Tracert" | while read -r Tracertline; do
         CurrentGatewayNumber=${Tracertline%% *}
         if [ "$CurrentGatewayNumber" = "$GatewayNumber" ]; then
             tempGwIP=${Tracertline#$GatewayNumber  }
             GatewayIP=${tempGwIP%% *}
             GatewayIP=$(echo "$GatewayIP" | tr -d '[:blank:]')
+            echo "$GatewayIP"
             break
         fi
-    done
+    done)
     LineNum=0
     while read -r line; do
         if [ $LineNum -gt 0 ]; then
@@ -129,7 +130,6 @@ GetISP() {
             NAME=${line#* NAME:}
             if [ "$GatewayIP" = "$IP" ]; then
                 ISPProvider=$NAME
-                echo "$NAME"
                 break
             fi
         fi
