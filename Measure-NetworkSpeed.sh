@@ -6,7 +6,7 @@
 
 ### INPUTS
 # 1. DEBUG - false to prevent displaing results in console
-# 2. OutputFile - File path of result destination
+
 
 ### OUTPUTS
 # Month
@@ -28,27 +28,28 @@
 ### CHANGE LOG
 # Author:   Stanislaw Horna
 # Created:  12-Jun-2023
-# Version:  1.0
+# Version:  1.1
 
 DEBUG=$1
-OutputFile=$2
 
-PackageName="speedtest"
-Filename="./GatewayNames.txt"
+SPEEDTEST_PACKAGE_NAME="speedtest"
+CONFIG_FILE="./GatewayNames.txt"
+OUTPUT_FOLDER="./Output"
+TIER_1_FOLDER="$OUTPUT_FOLDER/$(date "+%Y")"
+EXPORT_FILE_PATH="$TIER_1_FOLDER/$(date "+%Y-%b")"
 
 Main() {
     # Disable output to prevent displaying traceroute and speedtest output
-    # DisableConsoleOutput
+    DisableConsoleOutput
     # Check OS
     DeterminePlatform
     # Check if Speedtest® by Ookla® is installed
     TestPackageInstalled
     # Check which WAN gateway is in use
     GetISP
+    # Check folders and create structure if needed
+    VerifyFolderStructure
     # Perform speedtest
-    echo "ISP provider: $ISPProvider"
-    exit 0
-
     GetSpeedTest
     # Enable output
     EnableConsoleOutput
@@ -88,15 +89,15 @@ TestPackageInstalled() {
 
     MacOS)
 
-        if [ "$(brew list | grep $PackageName)" != $PackageName ]; then
-            echo "Cannot run the $PackageName, because it is not installed"
+        if [ "$(brew list | grep $SPEEDTEST_PACKAGE_NAME)" != $SPEEDTEST_PACKAGE_NAME ]; then
+            echo "Cannot run the $SPEEDTEST_PACKAGE_NAME, because it is not installed"
             exit 1
         fi
         ;;
 
     Ubuntu)
-        if [ -z "$(which $PackageName | grep $PackageName)" ]; then
-            echo "Cannot run the $PackageName, because it is not installed"
+        if [ -z "$(which $SPEEDTEST_PACKAGE_NAME | grep $SPEEDTEST_PACKAGE_NAME)" ]; then
+            echo "Cannot run the $SPEEDTEST_PACKAGE_NAME, because it is not installed"
             exit 1
         fi
         ;;
@@ -108,7 +109,7 @@ TestPackageInstalled() {
 GetISP() {
     Tracert=$(traceroute 1.1.1.1)
 
-    GatewayNumber=$(cat $Filename | grep -e "EXTERNAL_GATEWAY_NUMBER:")
+    GatewayNumber=$(cat $CONFIG_FILE | grep -e "EXTERNAL_GATEWAY_NUMBER:")
     GatewayNumber=${GatewayNumber#*: }
 
     GatewayIP=$(echo "$Tracert" | while read -r Tracertline; do
@@ -134,7 +135,7 @@ GetISP() {
             fi
         fi
         LineNum=$((LineNum + 1))
-    done <$Filename
+    done <$CONFIG_FILE
 }
 
 GetInterfaceToMeasure() {
@@ -229,17 +230,27 @@ GetTimeStamp() {
     Month=$(date "+%b")
 }
 
+VerifyFolderStructure() {
+    if [ ! -d "$OUTPUT_FOLDER" ]; then
+        mkdir "$OUTPUT_FOLDER"
+    fi
+    if [ ! -d "$TIER_1_FOLDER" ]; then
+        mkdir "$TIER_1_FOLDER"
+    fi
+}
+
 ExportCSV() {
     Headers="\"Month\",\"Timestamp\",\"ISP\",\"Local Gateway IP\",\"server name\",\"idle latency [ms]\",\"idle jitter [ms]\",\"packet loss [%]\",\"download [Mbps]\",\"download latency [ms]\",\"upload [Mbps]\",\"upload latency [ms]\",\"download bytes\",\"upload bytes\",\"share url\""
     Line="\"$Month\",\"$Timestamp\",\"$ISPProvider\",\"$GatewayIP\",$Result_Speedtest"
     # Check if the CSV file exists
-    if [ -f "$OutputFile" ]; then
+    if [ -f "$EXPORT_FILE_PATH" ]; then
         # Append the new row to the CSV file
-        echo "$Line" >>"$OutputFile"
+        echo "$Line" >>"$EXPORT_FILE_PATH"
     else
         # Create a new CSV file and add the header row
-        echo "$Headers" >"$OutputFile"
-        echo "$Line" >>"$OutputFile"
+        echo "$EXPORT_FILE_PATH"
+        echo "$Headers" >"$EXPORT_FILE_PATH"
+        echo "$Line" >>"$EXPORT_FILE_PATH"
     fi
 }
 
