@@ -33,6 +33,7 @@
 DEBUG=$1
 
 SPEEDTEST_PACKAGE_NAME="speedtest"
+IP_FOR_TRACEROUTE="1.1.1.1"
 CONFIG_FILE="./GatewayNames.txt"
 OUTPUT_FOLDER="./Output"
 TIER_1_FOLDER="$OUTPUT_FOLDER/$(date "+%Y")"
@@ -107,7 +108,7 @@ TestPackageInstalled() {
 }
 
 GetISP() {
-    Tracert=$(traceroute 1.1.1.1)
+    Tracert=$(traceroute $IP_FOR_TRACEROUTE)
 
     GatewayNumber=$(cat $CONFIG_FILE | grep -e "EXTERNAL_GATEWAY_NUMBER:")
     GatewayNumber=${GatewayNumber#*: }
