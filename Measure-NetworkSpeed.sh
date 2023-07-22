@@ -249,7 +249,6 @@ ExportCSV() {
         echo "$Line" >>"$EXPORT_FILE_PATH"
     else
         # Create a new CSV file and add the header row
-        echo "$EXPORT_FILE_PATH"
         echo "$Headers" >"$EXPORT_FILE_PATH"
         echo "$Line" >>"$EXPORT_FILE_PATH"
     fi
