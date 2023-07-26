@@ -33,7 +33,6 @@
 DEBUG=$1
 
 SPEEDTEST_PACKAGE_NAME="speedtest"
-IP_FOR_TRACEROUTE="1.1.1.1"
 CONFIG_FILE="./GatewayNames.txt"
 OUTPUT_FOLDER="./Output"
 TIER_1_FOLDER="$OUTPUT_FOLDER/$(date "+%Y")"
@@ -89,26 +88,23 @@ TestPackageInstalled() {
     case $Platform in
 
     MacOS)
-
         if [ "$(brew list | grep $SPEEDTEST_PACKAGE_NAME)" != $SPEEDTEST_PACKAGE_NAME ]; then
             echo "Cannot run the $SPEEDTEST_PACKAGE_NAME, because it is not installed"
             exit 1
         fi
         ;;
-
     Ubuntu)
         if [ -z "$(which $SPEEDTEST_PACKAGE_NAME | grep $SPEEDTEST_PACKAGE_NAME)" ]; then
             echo "Cannot run the $SPEEDTEST_PACKAGE_NAME, because it is not installed"
             exit 1
         fi
         ;;
-
     esac
 
 }
 
 GetISP() {
-    Tracert=$(traceroute $IP_FOR_TRACEROUTE)
+    Tracert=$(traceroute 1.1.1.1)
 
     GatewayNumber=$(cat $CONFIG_FILE | grep -e "EXTERNAL_GATEWAY_NUMBER:")
     GatewayNumber=${GatewayNumber#*: }
@@ -141,7 +137,6 @@ GetISP() {
 
 GetInterfaceToMeasure() {
     case $Platform in
-
     MacOS)
         WiFiInterfaceID=$(networksetup -listallhardwareports | awk '/Hardware Port: Wi-Fi/{getline; print $2}')
         InterfaceList=$(networksetup -listallhardwareports | awk '/Hardware Port:*/{getline; print $2}')
@@ -158,7 +153,6 @@ GetInterfaceToMeasure() {
 
 GetSpeedTest() {
     case $Platform in
-
     MacOS)
         SpeedTest=$(speedtest -I "$NICtoMeasure" -f csv)
         ;;
@@ -213,7 +207,10 @@ FormatSpeedTestOutput() {
     ## WARNING If you go to share URL they use 1000 as a divider, not 1024
     Upload=$((Upload * 8 / 1000 / 1000))
     Result_Speedtest="$1,$3,$4,$5,\"$Download\",${12},\"$Upload\",${16},$8,$9,${10}"
-
+    if [ ${#Result_Speedtest} -lt 20 ]; then
+        Result_Speedtest="False"
+        exit
+    fi
     DestinationServer="${DestinationServer#?}"
     DestinationServer="${DestinationServer%?}"
     Latency="${Latency#?}"
