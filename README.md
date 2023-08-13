@@ -43,7 +43,7 @@
 
 3. Remember to leave blank line at the end of the configuration file.
 
-## Real scenario case
+## Real scenario
 
 ```mermaid
 graph TD;
